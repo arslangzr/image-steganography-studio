@@ -100,6 +100,7 @@ This repository includes:
 - [SECURITY.md](SECURITY.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [CITATION.cff](CITATION.cff)
+- [PUBLISHING.md](PUBLISHING.md)
 - issue templates and pull request template under [.github](.github)
 
 ## Recommended GitHub repository settings for visibility
