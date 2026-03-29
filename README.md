@@ -78,6 +78,7 @@ python main.py
 ## Important notes
 
 - Prefer **PNG**, **BMP**, or **TIFF** for encoded output.
+- If no output extension is provided, the app saves the encoded image as **PNG**.
 - Avoid lossy formats such as JPG for final encoded files because they can destroy hidden data.
 - Capacity is approximately one character per three pixels.
 - This project is intended for learning and benign privacy use cases, not for bypassing security controls.

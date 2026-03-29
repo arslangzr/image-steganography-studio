@@ -10,3 +10,11 @@ class EncodeRequest:
     source_image_path: str
     output_image_path: str
     message: str
+
+
+@dataclass(frozen=True)
+class EncodeResult:
+    """Represents the result of a successful encode operation."""
+
+    output_image_path: str
+    warning: str | None = None

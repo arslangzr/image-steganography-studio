@@ -231,7 +231,7 @@ class SteganographyApp:
         )
 
         try:
-            warning = self.service.encode_message(request)
+            result = self.service.encode_message(request)
         except SteganographyError as error:
             self._show_error(str(error))
             return
@@ -239,11 +239,12 @@ class SteganographyApp:
             self._show_error(f"Unexpected error: {error}")
             return
 
+        self.output_image_var.set(result.output_image_path)
         success_message = "Message encoded successfully."
-        if warning:
-            success_message = f"{success_message}\n\nWarning: {warning}"
+        if result.warning:
+            success_message = f"{success_message}\n\nWarning: {result.warning}"
         messagebox.showinfo("Success", success_message)
-        self._set_status(f"Saved encoded image to {request.output_image_path}.")
+        self._set_status(f"Saved encoded image to {result.output_image_path}.")
 
     def _handle_decode(self) -> None:
         try:

@@ -2,19 +2,32 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
 from PIL import Image
 
 from .exceptions import CapacityError, ValidationError
-from .models import EncodeRequest
+from .models import EncodeRequest, EncodeResult
 
 
 @dataclass
 class PillowImageRepository:
     """Handles image persistence using Pillow."""
+
+    format_map: dict[str, str] = field(init=False, default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.format_map = {
+            ".png": "PNG",
+            ".bmp": "BMP",
+            ".tif": "TIFF",
+            ".tiff": "TIFF",
+            ".gif": "GIF",
+            ".jpg": "JPEG",
+            ".jpeg": "JPEG",
+        }
 
     def open_rgb_image(self, image_path: str) -> Image.Image:
         path = Path(image_path)
@@ -24,10 +37,22 @@ class PillowImageRepository:
         with Image.open(path, "r") as image:
             return image.convert("RGB")
 
-    def save_image(self, image: Image.Image, output_path: str) -> None:
+    def normalize_output_path(self, output_path: str) -> Path:
         output = Path(output_path)
+        if output.suffix:
+            return output
+        return output.with_suffix(".png")
+
+    def save_image(self, image: Image.Image, output_path: str) -> str:
+        output = self.normalize_output_path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        image.save(output)
+        image_format = self.format_map.get(output.suffix.lower())
+        if image_format is None:
+            raise ValidationError(
+                "Unsupported output format. Use PNG, BMP, TIFF, GIF, JPG, or JPEG."
+            )
+        image.save(output, format=image_format)
+        return str(output)
 
 
 @dataclass
@@ -145,14 +170,17 @@ class SteganographyService:
         image = self.repository.open_rgb_image(image_path)
         return self.codec.capacity_for_image(image)
 
-    def encode_message(self, request: EncodeRequest) -> str | None:
+    def encode_message(self, request: EncodeRequest) -> EncodeResult:
         source_image = self.repository.open_rgb_image(request.source_image_path)
         capacity = self.codec.capacity_for_image(source_image)
         self.validator.validate_encode_request(request, capacity)
 
         encoded_image = self.codec.encode(source_image, request.message)
-        self.repository.save_image(encoded_image, request.output_image_path)
-        return self.validator.build_output_warning(request.output_image_path)
+        saved_output_path = self.repository.save_image(encoded_image, request.output_image_path)
+        return EncodeResult(
+            output_image_path=saved_output_path,
+            warning=self.validator.build_output_warning(saved_output_path),
+        )
 
     def decode_message(self, image_path: str) -> str:
         if not image_path.strip():
